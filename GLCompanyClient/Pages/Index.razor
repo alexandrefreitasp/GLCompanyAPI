@@ -1,0 +1,100 @@
+﻿@page "/"
+@using GLCompanyClient.Models
+@using GLCompanyClient.Services
+@inject CompanyService CompanyService
+@inject NavigationManager NavigationManager
+
+<h3>Company List</h3>
+
+<div class="search-container">
+    <input @bind="_searchId" placeholder="Search by ID" />
+    <button @onclick="SearchById">Search</button>
+
+    <input @bind="_searchIsin" placeholder="Search by ISIN" />
+    <button @onclick="SearchByIsin">Search</button>
+
+    <button @onclick="LoadAllCompanies">Show All</button>
+    <button @onclick="NewCompany">New Company</button>
+</div>
+
+@if (!string.IsNullOrEmpty(ApiMessage))
+{
+    <p style="color: red">@ApiMessage</p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Exchange</th>
+            <th>Ticker</th>
+            <th>ISIN</th>
+            <th>Website</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var company in _companies)
+        {
+            <tr>
+                <td>@company.Name</td>
+                <td>@company.Exchange</td>
+                <td>@company.Ticker</td>
+                <td>@company.Isin</td>
+                <td><a href="@company.Website" target="_blank">@company.Website</a></td>
+                <td>
+                    <button @onclick="@(() => EditCompany(company.Id))">Edit</button>
+                    <button @onclick="@(() => DeleteCompany(company.Id))">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Company> _companies = new();
+    private string _searchId = "";
+    private string _searchIsin = "";
+    private string ApiMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllCompanies();
+    }
+
+    private async Task LoadAllCompanies()
+    {
+        (_companies, ApiMessage) = await CompanyService.GetCompaniesAsync();
+    }
+
+    private async Task SearchById()
+    {
+        if (int.TryParse(_searchId, out int id))
+        {
+            (var company, ApiMessage) = await CompanyService.GetCompanyById(id);
+            _companies = company != null ? new List<Company> { company } : new List<Company>();
+        }
+    }
+
+    private async Task SearchByIsin()
+    {
+        (var company, ApiMessage) = await CompanyService.GetCompanyByIsin(_searchIsin);
+        _companies = company != null ? new List<Company> { company } : new List<Company>();
+    }
+
+    private void NewCompany()
+    {
+        NavigationManager.NavigateTo("/new-company");
+    }
+
+    private void EditCompany(int id)
+    {
+        NavigationManager.NavigateTo($"/edit-company/{id}");
+    }
+
+    private async Task DeleteCompany(int id)
+    {
+        ApiMessage = await CompanyService.DeleteCompanyAsync(id);
+        await LoadAllCompanies();
+    }
+}

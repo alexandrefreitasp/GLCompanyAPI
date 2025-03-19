@@ -1,0 +1,82 @@
+﻿@page "/edit-company/{id:int}"
+@using GLCompanyClient.Models
+@using GLCompanyClient.Services
+@inject CompanyService CompanyService
+@inject NavigationManager Navigation
+
+<h3>Edit Company</h3>
+
+@if (Company == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="Company" OnValidSubmit="SaveCompany">
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+            <label>Name:</label>
+            <InputText @bind-Value="Company.Name" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Exchange:</label>
+            <InputText @bind-Value="Company.Exchange" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Ticker:</label>
+            <InputText @bind-Value="Company.Ticker" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>ISIN:</label>
+            <InputText @bind-Value="Company.Isin" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Website:</label>
+            <InputText @bind-Value="Company.Website" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Company Company { get; set; }
+    private string ApiMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            (Company, ApiMessage) = await CompanyService.GetCompanyById(Id);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    private async Task SaveCompany()
+    {
+        try
+        {
+            await CompanyService.UpdateCompanyAsync(Id, Company);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
